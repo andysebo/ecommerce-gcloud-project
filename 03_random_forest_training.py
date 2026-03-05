@@ -4,11 +4,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 
-# 1. Connect to BigQuery (It will automatically find your ADC credentials!)
-project_id = 'fiery-chess-489213-b0' # <--- CHANGE THIS to your GCP Project ID
+# connecting to BigQuery
+project_id = 'fiery-chess-489213-b0'
 client = bigquery.Client(project=project_id)
 
-# 2. Pull the Data (100,000 random sessions)
+# pulling the data
 query = f"""
     SELECT 
         total_events_in_session,
@@ -25,7 +25,7 @@ print("Downloading data from BigQuery...")
 df = client.query(query).to_dataframe()
 print(f"Data downloaded! Shape: {df.shape}")
 
-# 3. Prepare the Data for Machine Learning
+# preparing data for ML
 df = df.dropna()
 
 X = df.drop('made_purchase', axis=1)
@@ -33,30 +33,29 @@ y = df['made_purchase']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 4. Train the Model 
-print("Training Random Forest Model...")
+# training the model
 rf_model = RandomForestClassifier(n_estimators=100, class_weight='balanced', random_state=42)
 rf_model.fit(X_train, y_train)
 
-# 5. Evaluate the Model
+# evaluating the model
 y_pred = rf_model.predict(X_test)
-print("\n--- Classification Report ---")
+print("\n- Classification Report -")
 print(classification_report(y_test, y_pred))
 
-# 6. Extract Feature Importance
+# extracting feature importance
 importances = pd.DataFrame({
     'Feature': X.columns,
     'Importance': rf_model.feature_importances_
 }).sort_values(by='Importance', ascending=False)
 
-print("\n--- Feature Importance ---")
+print("\n- Feature Importance -")
 print(importances)
 
 
-# Save the feature importance for the dashboard
+# saving feature importance to the dashboard
 importances.to_csv('feature_importance.csv', index=False)
 
-# Let's also save the basic model metrics
+# saving the model metrics
 metrics = pd.DataFrame({
     'Metric': ['Accuracy', 'Recall (Purchase)'],
     'Score': [0.99, 0.96]
